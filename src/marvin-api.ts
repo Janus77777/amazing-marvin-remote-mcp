@@ -455,27 +455,41 @@ export class MarvinAPIClient {
    * Delete task permanently
    */
   async deleteTask(taskId: string): Promise<StandardResponse<boolean>> {
-    // Use X-Full-Access-Token for delete operations (required by Marvin API)
-    const url = `${this.baseUrl}/doc/delete`;
-    const response = await fetch(url, {
-      method: 'POST',
+    if (!this.isCouchDBConfigured()) {
+      throw new Error('CouchDB not configured. Cannot delete tasks without database access.');
+    }
+
+    // CouchDB delete requires the document's _rev
+    // Step 1: Get the document to retrieve its _rev
+    const docUrl = `${this.couchUrl}/${this.couchDb}/${taskId}`;
+    const getResponse = await fetch(docUrl, {
       headers: {
-        'X-Full-Access-Token': this.apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        itemId: taskId
-      })
+        'Authorization': this.createCouchAuthHeader()
+      }
     });
 
-    if (!response.ok) {
-      throw new Error(`Marvin API error: ${response.status} ${response.statusText}`);
+    if (!getResponse.ok) {
+      throw new Error(`Failed to get task for deletion: ${getResponse.status} ${getResponse.statusText}`);
+    }
+
+    const doc = await getResponse.json();
+
+    // Step 2: Delete the document using its _rev
+    const deleteResponse = await fetch(`${docUrl}?rev=${doc._rev}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': this.createCouchAuthHeader()
+      }
+    });
+
+    if (!deleteResponse.ok) {
+      throw new Error(`CouchDB delete error: ${deleteResponse.status} ${deleteResponse.statusText}`);
     }
 
     // Invalidate relevant caches
     await this.invalidateCache(['tasks:', 'all_tasks:', 'completed:']);
 
-    return this.createResponse(true, `Deleted task ${taskId} permanently`);
+    return this.createResponse(true, `Deleted task ${taskId} permanently via CouchDB`);
   }
 
   /**
