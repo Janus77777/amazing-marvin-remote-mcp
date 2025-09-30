@@ -1,0 +1,47 @@
+name = "marvin-mcp-v2"
+main = "src/worker.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Enable workers.dev subdomain
+workers_dev = true
+
+[env.production]
+name = "amazing-marvin-remote-mcp"
+
+[[env.production.kv_namespaces]]
+binding = "CACHE"
+id = "177ff0fa58ed40bebb46a7009c01dcbe"
+
+[[env.production.kv_namespaces]]
+binding = "TOKENS"  
+id = "cc66e8869796469e81f0cc4ac1cd2e52"
+
+[env.staging]
+name = "amazing-marvin-remote-mcp-staging"
+
+# Environment variables (set via wrangler secret put)
+# AMAZING_MARVIN_API_KEY
+# OAUTH_CLIENT_SECRET
+# JWT_SECRET
+# MARVIN_SYNC_SERVER
+# MARVIN_SYNC_DATABASE
+# MARVIN_SYNC_USER
+# MARVIN_SYNC_PASSWORD
+
+# Temporary: CouchDB vars for testing (move to secrets later)
+[env.production.vars]
+MARVIN_SYNC_SERVER = "https://512940bf-6e0c-4d7b-884b-9fc66185836b-bluemix.cloudant.com"
+MARVIN_SYNC_DATABASE = "u5097490057527296"
+MARVIN_SYNC_USER = "apikey-123fc55513f848ddb2f7610d10f2a268"
+MARVIN_SYNC_PASSWORD = "fcdd1568312c25eb020f58a4e16816b9cd28f39f"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "177ff0fa58ed40bebb46a7009c01dcbe"
+preview_id = "e4783ef3e2064d5f9ac1497738819fea"
+
+[[kv_namespaces]]
+binding = "TOKENS"  
+id = "cc66e8869796469e81f0cc4ac1cd2e52"
+preview_id = "42335663532e4ac79e800628eda6e466"
