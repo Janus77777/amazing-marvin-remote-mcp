@@ -455,12 +455,22 @@ export class MarvinAPIClient {
    * Delete task permanently
    */
   async deleteTask(taskId: string): Promise<StandardResponse<boolean>> {
-    await this.makeRequest('/doc/delete', {
+    // Use X-Full-Access-Token for delete operations (required by Marvin API)
+    const url = `${this.baseUrl}/doc/delete`;
+    const response = await fetch(url, {
       method: 'POST',
+      headers: {
+        'X-Full-Access-Token': this.apiKey,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         itemId: taskId
       })
     });
+
+    if (!response.ok) {
+      throw new Error(`Marvin API error: ${response.status} ${response.statusText}`);
+    }
 
     // Invalidate relevant caches
     await this.invalidateCache(['tasks:', 'all_tasks:', 'completed:']);
