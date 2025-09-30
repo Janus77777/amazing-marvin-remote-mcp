@@ -564,10 +564,10 @@ export class MarvinAPIClient {
   /**
    * Delete multiple tasks in batch
    */
-  async batchDeleteTasks(taskIds: string[]): Promise<StandardResponse<{ results: boolean[], deleted: string[], failed: string[] }>> {
+  async batchDeleteTasks(taskIds: string[]): Promise<StandardResponse<{ results: boolean[], deleted: string[], failed: Array<{id: string, error: string}> }>> {
     const results: boolean[] = [];
     const deleted: string[] = [];
-    const failed: string[] = [];
+    const failed: Array<{id: string, error: string}> = [];
 
     await Promise.all(
       taskIds.map(async (id) => {
@@ -577,16 +577,22 @@ export class MarvinAPIClient {
           deleted.push(id);
         } catch (error) {
           results.push(false);
-          failed.push(id);
+          failed.push({
+            id,
+            error: error instanceof Error ? error.message : String(error)
+          });
         }
       })
     );
 
     const successCount = results.filter(r => r).length;
+    const errorSummary = failed.length > 0
+      ? `\nErrors: ${failed.slice(0, 3).map(f => `${f.id}: ${f.error}`).join('; ')}${failed.length > 3 ? ` and ${failed.length - 3} more...` : ''}`
+      : '';
 
     return this.createResponse(
       { results, deleted, failed },
-      `Deleted ${successCount}/${taskIds.length} tasks permanently. ${failed.length > 0 ? `Failed: ${failed.join(', ')}` : ''}`,
+      `Deleted ${successCount}/${taskIds.length} tasks permanently.${errorSummary}`,
       successCount
     );
   }
