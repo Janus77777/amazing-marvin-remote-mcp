@@ -207,8 +207,22 @@ export const MCP_TOOLS: MCPTool[] = [
       type: "object",
       properties: {
         task_id: {
-          type: "string", 
+          type: "string",
           description: "The ID of the task to mark as done"
+        }
+      },
+      required: ["task_id"]
+    }
+  },
+  {
+    name: "delete_task",
+    description: "Delete a task permanently from Amazing Marvin",
+    inputSchema: {
+      type: "object",
+      properties: {
+        task_id: {
+          type: "string",
+          description: "The ID of the task to delete"
         }
       },
       required: ["task_id"]

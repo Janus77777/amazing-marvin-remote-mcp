@@ -57,7 +57,10 @@ export class MCPToolHandler {
         
         case 'mark_task_done':
           return await this.apiClient.markTaskDone(params.task_id);
-        
+
+        case 'delete_task':
+          return await this.apiClient.deleteTask(params.task_id);
+
         case 'create_project':
           return await this.apiClient.createProject(params);
         

@@ -452,6 +452,23 @@ export class MarvinAPIClient {
   }
 
   /**
+   * Delete task permanently
+   */
+  async deleteTask(taskId: string): Promise<StandardResponse<boolean>> {
+    await this.makeRequest('/delete', {
+      method: 'POST',
+      body: JSON.stringify({
+        itemId: taskId
+      })
+    });
+
+    // Invalidate relevant caches
+    await this.invalidateCache(['tasks:', 'all_tasks:', 'completed:']);
+
+    return this.createResponse(true, `Deleted task ${taskId} permanently`);
+  }
+
+  /**
    * Create a new project
    */
   async createProject(projectData: any): Promise<StandardResponse<CleanProject>> {
