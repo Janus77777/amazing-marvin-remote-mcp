@@ -455,7 +455,7 @@ export class MarvinAPIClient {
    * Delete task permanently
    */
   async deleteTask(taskId: string): Promise<StandardResponse<boolean>> {
-    await this.makeRequest('/delete', {
+    await this.makeRequest('/removeTask', {
       method: 'POST',
       body: JSON.stringify({
         itemId: taskId
