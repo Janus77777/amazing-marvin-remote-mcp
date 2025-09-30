@@ -72,7 +72,10 @@ export class MCPToolHandler {
         
         case 'batch_mark_done':
           return await this.apiClient.batchMarkDone(params.task_ids);
-        
+
+        case 'batch_delete_tasks':
+          return await this.apiClient.batchDeleteTasks(params.task_ids);
+
         case 'batch_create_tasks':
           return await this.apiClient.batchCreateTasks(params.tasks);
         

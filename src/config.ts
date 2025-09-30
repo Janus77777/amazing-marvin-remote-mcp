@@ -289,6 +289,21 @@ export const MCP_TOOLS: MCPTool[] = [
     }
   },
   {
+    name: "batch_delete_tasks",
+    description: "Delete multiple tasks permanently from Amazing Marvin. WARNING: Cannot be recovered!",
+    inputSchema: {
+      type: "object",
+      properties: {
+        task_ids: {
+          type: "array",
+          items: { type: "string" },
+          description: "Array of task IDs to delete permanently"
+        }
+      },
+      required: ["task_ids"]
+    }
+  },
+  {
     name: "batch_create_tasks",
     description: "Create multiple tasks at once",
     inputSchema: {

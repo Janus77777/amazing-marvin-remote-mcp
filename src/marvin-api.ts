@@ -562,6 +562,36 @@ export class MarvinAPIClient {
   }
 
   /**
+   * Delete multiple tasks in batch
+   */
+  async batchDeleteTasks(taskIds: string[]): Promise<StandardResponse<{ results: boolean[], deleted: string[], failed: string[] }>> {
+    const results: boolean[] = [];
+    const deleted: string[] = [];
+    const failed: string[] = [];
+
+    await Promise.all(
+      taskIds.map(async (id) => {
+        try {
+          await this.deleteTask(id);
+          results.push(true);
+          deleted.push(id);
+        } catch (error) {
+          results.push(false);
+          failed.push(id);
+        }
+      })
+    );
+
+    const successCount = results.filter(r => r).length;
+
+    return this.createResponse(
+      { results, deleted, failed },
+      `Deleted ${successCount}/${taskIds.length} tasks permanently. ${failed.length > 0 ? `Failed: ${failed.join(', ')}` : ''}`,
+      successCount
+    );
+  }
+
+  /**
    * Batch create tasks
    */
   async batchCreateTasks(tasksData: any[]): Promise<StandardResponse<CleanTask[]>> {
