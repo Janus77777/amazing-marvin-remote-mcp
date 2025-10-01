@@ -131,12 +131,7 @@ export class MCPToolHandler {
           return await this.apiClient.batchCreateEvents(params.events);
 
         case 'import_recurring_schedule':
-          return await this.apiClient.importRecurringSchedule({
-            weeklyEvents: params.weekly_events,
-            startDate: params.start_date,
-            endDate: params.end_date,
-            calId: params.cal_id
-          });
+          return await this.apiClient.importRecurringSchedule(params);
 
         default:
           throw new Error(`Unknown tool: ${toolName}`);

@@ -862,25 +862,25 @@ export class MarvinAPIClient {
    */
   async importRecurringSchedule(params: {
     weeklyEvents: Array<{
-      dayOfWeek: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
+      day_of_week: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
       time: string; // "HH:MM"
       title: string;
-      durationMin: number;
+      duration_min: number;
       notes?: string;
     }>;
-    startDate: string; // "YYYY-MM-DD"
-    endDate: string; // "YYYY-MM-DD"
-    calId?: string;
+    start_date: string; // "YYYY-MM-DD"
+    end_date: string; // "YYYY-MM-DD"
+    cal_id?: string;
   }): Promise<StandardResponse<{
     created: string[],
     failed: Array<{date: string, title: string, error: string}>,
     totalGenerated: number
   }>> {
-    const { weeklyEvents, startDate, endDate, calId } = params;
+    const { weeklyEvents, start_date, end_date, cal_id } = params;
 
     // Parse dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(start_date);
+    const end = new Date(end_date);
 
     // Generate all event occurrences
     const allEvents: Array<{
@@ -900,7 +900,7 @@ export class MarvinAPIClient {
 
         // Calculate the target day of week
         const currentDay = eventDate.getDay();
-        const targetDay = weeklyEvent.dayOfWeek;
+        const targetDay = weeklyEvent.day_of_week;
         const daysToAdd = (targetDay - currentDay + 7) % 7;
 
         eventDate.setDate(eventDate.getDate() + daysToAdd);
@@ -911,9 +911,9 @@ export class MarvinAPIClient {
           allEvents.push({
             title: weeklyEvent.title,
             start: `${dateStr} ${weeklyEvent.time}`,
-            durationMin: weeklyEvent.durationMin,
+            durationMin: weeklyEvent.duration_min,
             notes: weeklyEvent.notes,
-            calId: calId
+            calId: cal_id
           });
         }
       }
