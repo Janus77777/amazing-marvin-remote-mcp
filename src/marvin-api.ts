@@ -811,4 +811,48 @@ export class MarvinAPIClient {
       1
     );
   }
+
+  /**
+   * Batch create multiple events
+   */
+  async batchCreateEvents(events: Array<{
+    title: string;
+    start: string;
+    durationMin?: number;
+    allDay?: boolean;
+    notes?: string;
+    calId?: string;
+  }>): Promise<StandardResponse<{
+    created: string[],
+    failed: Array<{title: string, start: string, error: string}>
+  }>> {
+    const created: string[] = [];
+    const failed: Array<{title: string, start: string, error: string}> = [];
+
+    await Promise.all(
+      events.map(async (event) => {
+        try {
+          const result = await this.createEvent(event);
+          created.push(result.data.id);
+        } catch (error) {
+          failed.push({
+            title: event.title,
+            start: event.start,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      })
+    );
+
+    const successCount = created.length;
+    const errorSummary = failed.length > 0
+      ? ` ${failed.length} failed.`
+      : '';
+
+    return this.createResponse(
+      { created, failed },
+      `Created ${successCount}/${events.length} events.${errorSummary}`,
+      successCount
+    );
+  }
 }

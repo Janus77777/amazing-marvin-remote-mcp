@@ -127,6 +127,9 @@ export class MCPToolHandler {
             notes: params.notes
           });
 
+        case 'batch_create_events':
+          return await this.apiClient.batchCreateEvents(params.events);
+
         default:
           throw new Error(`Unknown tool: ${toolName}`);
       }

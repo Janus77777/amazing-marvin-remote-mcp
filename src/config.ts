@@ -442,6 +442,32 @@ export const MCP_TOOLS: MCPTool[] = [
       required: ["title", "date", "time", "duration_min"]
     }
   },
+  {
+    name: "batch_create_events",
+    description: "Create multiple events at once in Amazing Marvin. More efficient than creating events one by one.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        events: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string", description: "Event title" },
+              start: { type: "string", description: "Start date and time in 'YYYY-MM-DD HH:MM' format (local time)" },
+              duration_min: { type: "number", description: "Duration in minutes" },
+              all_day: { type: "boolean", description: "Whether this is an all-day event" },
+              notes: { type: "string", description: "Optional event notes" },
+              cal_id: { type: "string", description: "Optional calendar ID" }
+            },
+            required: ["title", "start"]
+          },
+          description: "Array of events to create"
+        }
+      },
+      required: ["events"]
+    }
+  },
 
   // Analytics Operations (6 Tools)
   {
