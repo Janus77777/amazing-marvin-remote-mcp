@@ -718,16 +718,18 @@ export class MarvinAPIClient {
 
   /**
    * 將本地時間轉換為 UTC ISO 字串
+   * 明確處理台北時區 (UTC+8)
    */
   private convertToUTCISO(localDateTimeStr: string, timeZone: string = 'Asia/Taipei'): string {
-    // 簡化版本：假設輸入是 "YYYY-MM-DD HH:MM" 格式
+    // 輸入格式: "YYYY-MM-DD HH:MM"
     const [datePart, timePart] = localDateTimeStr.split(' ');
-    const localDateTime = new Date(`${datePart}T${timePart}:00`);
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
 
-    // 注意：這是簡化版本，實際上可能需要更精確的時區處理
-    // 假設台北時間 UTC+8
-    const utcDateTime = new Date(localDateTime.getTime() - (8 * 60 * 60 * 1000));
-    return utcDateTime.toISOString();
+    // 台北時間 UTC+8，所以 UTC時間 = 本地時間 - 8小時
+    // 使用 Date.UTC 確保創建的是 UTC 時間
+    const utcTime = Date.UTC(year, month - 1, day, hours - 8, minutes, 0);
+    return new Date(utcTime).toISOString();
   }
 
   /**

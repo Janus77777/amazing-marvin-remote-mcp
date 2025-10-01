@@ -128,7 +128,16 @@ export class MCPToolHandler {
           });
 
         case 'batch_create_events':
-          return await this.apiClient.batchCreateEvents(params.events);
+          // Map snake_case params to camelCase for batchCreateEvents
+          const mappedEvents = params.events.map((event: any) => ({
+            title: event.title,
+            start: event.start,
+            durationMin: event.duration_min,
+            allDay: event.all_day,
+            notes: event.notes,
+            calId: event.cal_id
+          }));
+          return await this.apiClient.batchCreateEvents(mappedEvents);
 
         case 'import_recurring_schedule':
           return await this.apiClient.importRecurringSchedule(params);
