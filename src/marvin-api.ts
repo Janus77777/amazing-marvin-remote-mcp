@@ -878,9 +878,47 @@ export class MarvinAPIClient {
   }>> {
     const { weeklyEvents, start_date, end_date, cal_id } = params;
 
-    // Parse dates
-    const start = new Date(start_date);
-    const end = new Date(end_date);
+    // Input validation
+    if (!weeklyEvents || weeklyEvents.length === 0) {
+      throw new Error('weeklyEvents cannot be empty');
+    }
+
+    // Parse dates using local time (avoid timezone issues)
+    const parseLocalDate = (dateStr: string): Date => {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+
+    const start = parseLocalDate(start_date);
+    const end = parseLocalDate(end_date);
+
+    if (isNaN(start.getTime())) {
+      throw new Error(`Invalid start_date: ${start_date}`);
+    }
+    if (isNaN(end.getTime())) {
+      throw new Error(`Invalid end_date: ${end_date}`);
+    }
+    if (start > end) {
+      throw new Error('start_date must be before or equal to end_date');
+    }
+
+    // Validate weekly events
+    for (const event of weeklyEvents) {
+      if (event.day_of_week < 0 || event.day_of_week > 6) {
+        throw new Error(`Invalid day_of_week: ${event.day_of_week}. Must be 0-6.`);
+      }
+      if (!event.title || !event.time || !event.duration_min) {
+        throw new Error('Each weeklyEvent must have title, time, and duration_min');
+      }
+    }
+
+    // Format date as YYYY-MM-DD without timezone conversion
+    const formatDate = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
 
     // Generate all event occurrences
     const allEvents: Array<{
@@ -891,23 +929,23 @@ export class MarvinAPIClient {
       calId?: string;
     }> = [];
 
-    // Iterate through each week
-    let currentDate = new Date(start);
-    while (currentDate <= end) {
-      // For each day in the weekly schedule
+    // Find the first occurrence of each day of week starting from start_date
+    // This ensures we don't miss the first week
+    const firstWeekStart = new Date(start);
+    // Move to the beginning of the week (Sunday)
+    firstWeekStart.setDate(start.getDate() - start.getDay());
+
+    let currentWeekStart = new Date(firstWeekStart);
+
+    while (currentWeekStart <= end) {
       for (const weeklyEvent of weeklyEvents) {
-        const eventDate = new Date(currentDate);
+        // Calculate the exact date for this event
+        const eventDate = new Date(currentWeekStart);
+        eventDate.setDate(currentWeekStart.getDate() + weeklyEvent.day_of_week);
 
-        // Calculate the target day of week
-        const currentDay = eventDate.getDay();
-        const targetDay = weeklyEvent.day_of_week;
-        const daysToAdd = (targetDay - currentDay + 7) % 7;
-
-        eventDate.setDate(eventDate.getDate() + daysToAdd);
-
-        // Only include if within range
+        // Only include if within the specified range
         if (eventDate >= start && eventDate <= end) {
-          const dateStr = eventDate.toISOString().split('T')[0];
+          const dateStr = formatDate(eventDate);
           allEvents.push({
             title: weeklyEvent.title,
             start: `${dateStr} ${weeklyEvent.time}`,
@@ -918,14 +956,14 @@ export class MarvinAPIClient {
         }
       }
 
-      // Move to next week
-      currentDate.setDate(currentDate.getDate() + 7);
+      // Move to next week (add 7 days)
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
     }
 
-    // Sort by date
+    // Sort by date and time
     allEvents.sort((a, b) => a.start.localeCompare(b.start));
 
-    // Create all events
+    // Create all events in parallel
     const created: string[] = [];
     const failed: Array<{date: string, title: string, error: string}> = [];
 
@@ -946,10 +984,13 @@ export class MarvinAPIClient {
 
     const successCount = created.length;
     const totalGenerated = allEvents.length;
+    const failedSummary = failed.length > 0
+      ? ` ${failed.length} failed: ${failed.slice(0, 3).map(f => `${f.date} ${f.title}`).join(', ')}${failed.length > 3 ? '...' : ''}`
+      : '';
 
     return this.createResponse(
       { created, failed, totalGenerated },
-      `Imported recurring schedule: ${successCount}/${totalGenerated} events created successfully.`,
+      `Imported recurring schedule: ${successCount}/${totalGenerated} events created successfully.${failedSummary}`,
       successCount
     );
   }
