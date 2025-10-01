@@ -710,7 +710,9 @@ export class MarvinAPIClient {
     });
 
     if (!response.ok) {
-      throw new Error(`CouchDB error: ${response.status} ${response.statusText}`);
+      // Include response body for better error diagnostics
+      const errorBody = await response.text();
+      throw new Error(`CouchDB error: ${response.status} ${response.statusText}. ${errorBody}`);
     }
 
     return await response.json();
@@ -859,6 +861,31 @@ export class MarvinAPIClient {
   }
 
   /**
+   * Helper: Process items in batches to avoid rate limits
+   */
+  private async processBatch<T, R>(
+    items: T[],
+    processor: (item: T) => Promise<R>,
+    batchSize: number = 20,
+    delayMs: number = 100
+  ): Promise<R[]> {
+    const results: R[] = [];
+
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      const batchResults = await Promise.all(batch.map(processor));
+      results.push(...batchResults);
+
+      // Delay between batches (except after the last batch)
+      if (i + batchSize < items.length) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+
+    return results;
+  }
+
+  /**
    * Import recurring weekly schedule (e.g., semester courses)
    * Automatically generates all occurrences between start and end date
    */
@@ -965,12 +992,13 @@ export class MarvinAPIClient {
     // Sort by date and time
     allEvents.sort((a, b) => a.start.localeCompare(b.start));
 
-    // Create all events in parallel
+    // Create all events in batches to avoid rate limits
     const created: string[] = [];
     const failed: Array<{date: string, title: string, error: string}> = [];
 
-    await Promise.all(
-      allEvents.map(async (event) => {
+    await this.processBatch(
+      allEvents,
+      async (event) => {
         try {
           const result = await this.createEvent(event);
           created.push(result.data.id);
@@ -981,7 +1009,9 @@ export class MarvinAPIClient {
             error: error instanceof Error ? error.message : String(error)
           });
         }
-      })
+      },
+      20,  // batch size: 20 events per batch
+      150  // delay: 150ms between batches
     );
 
     const successCount = created.length;
