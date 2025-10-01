@@ -468,6 +468,58 @@ export const MCP_TOOLS: MCPTool[] = [
       required: ["events"]
     }
   },
+  {
+    name: "import_recurring_schedule",
+    description: "Import a recurring weekly schedule (e.g., semester courses). Automatically generates all occurrences between start and end dates. Perfect for creating repeating events like weekly classes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        weekly_events: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              day_of_week: {
+                type: "number",
+                description: "Day of week: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday"
+              },
+              time: {
+                type: "string",
+                description: "Start time in HH:MM format (24-hour, e.g., '18:25')"
+              },
+              title: {
+                type: "string",
+                description: "Event title"
+              },
+              duration_min: {
+                type: "number",
+                description: "Duration in minutes"
+              },
+              notes: {
+                type: "string",
+                description: "Optional event notes"
+              }
+            },
+            required: ["day_of_week", "time", "title", "duration_min"]
+          },
+          description: "Array of weekly recurring events"
+        },
+        start_date: {
+          type: "string",
+          description: "Start date in YYYY-MM-DD format"
+        },
+        end_date: {
+          type: "string",
+          description: "End date in YYYY-MM-DD format"
+        },
+        cal_id: {
+          type: "string",
+          description: "Optional calendar ID for external calendar sync"
+        }
+      },
+      required: ["weekly_events", "start_date", "end_date"]
+    }
+  },
 
   // Analytics Operations (6 Tools)
   {

@@ -855,4 +855,102 @@ export class MarvinAPIClient {
       successCount
     );
   }
+
+  /**
+   * Import recurring weekly schedule (e.g., semester courses)
+   * Automatically generates all occurrences between start and end date
+   */
+  async importRecurringSchedule(params: {
+    weeklyEvents: Array<{
+      dayOfWeek: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
+      time: string; // "HH:MM"
+      title: string;
+      durationMin: number;
+      notes?: string;
+    }>;
+    startDate: string; // "YYYY-MM-DD"
+    endDate: string; // "YYYY-MM-DD"
+    calId?: string;
+  }): Promise<StandardResponse<{
+    created: string[],
+    failed: Array<{date: string, title: string, error: string}>,
+    totalGenerated: number
+  }>> {
+    const { weeklyEvents, startDate, endDate, calId } = params;
+
+    // Parse dates
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Generate all event occurrences
+    const allEvents: Array<{
+      title: string;
+      start: string;
+      durationMin: number;
+      notes?: string;
+      calId?: string;
+    }> = [];
+
+    // Iterate through each week
+    let currentDate = new Date(start);
+    while (currentDate <= end) {
+      // For each day in the weekly schedule
+      for (const weeklyEvent of weeklyEvents) {
+        const eventDate = new Date(currentDate);
+
+        // Calculate the target day of week
+        const currentDay = eventDate.getDay();
+        const targetDay = weeklyEvent.dayOfWeek;
+        const daysToAdd = (targetDay - currentDay + 7) % 7;
+
+        eventDate.setDate(eventDate.getDate() + daysToAdd);
+
+        // Only include if within range
+        if (eventDate >= start && eventDate <= end) {
+          const dateStr = eventDate.toISOString().split('T')[0];
+          allEvents.push({
+            title: weeklyEvent.title,
+            start: `${dateStr} ${weeklyEvent.time}`,
+            durationMin: weeklyEvent.durationMin,
+            notes: weeklyEvent.notes,
+            calId: calId
+          });
+        }
+      }
+
+      // Move to next week
+      currentDate.setDate(currentDate.getDate() + 7);
+    }
+
+    // Sort by date
+    allEvents.sort((a, b) => a.start.localeCompare(b.start));
+
+    // Create all events
+    const created: string[] = [];
+    const failed: Array<{date: string, title: string, error: string}> = [];
+
+    await Promise.all(
+      allEvents.map(async (event) => {
+        try {
+          const result = await this.createEvent(event);
+          created.push(result.data.id);
+        } catch (error) {
+          failed.push({
+            date: event.start,
+            title: event.title,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      })
+    );
+
+    const successCount = created.length;
+    const totalGenerated = allEvents.length;
+
+    return this.createResponse(
+      { created, failed, totalGenerated },
+      `Imported recurring schedule: ${successCount}/${totalGenerated} events created successfully.`,
+      successCount
+    );
+  }
 }
